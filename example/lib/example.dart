@@ -105,7 +105,7 @@ class _StartState extends State<Start> {
           if (kIsWeb) {}
           if (result != null) {
             Uint8List? fileBytes = result.files.first.bytes;
-            if (fileBytes != null) {Uint8List
+            if (fileBytes != null) {
               try {
                 final stopwatch = Stopwatch()..start();
                 print("File Picked");
