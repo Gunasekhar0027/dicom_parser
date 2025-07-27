@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   file_picker: ^10.2.0
+  #dicom_parser: ^0.0.2
   dicom_parser:
     path: ../
 

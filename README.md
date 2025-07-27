@@ -4,6 +4,13 @@ This project is a fully Dart-based DICOM parser, developed entirely using the Fl
 
 The parser supports reading, decoding, and interpreting core medical imaging data, making it a powerful tool for developers building health-tech applications.
 
+## Platform Support
+
+| Android |  iOS  | MacOS |  Web  | Linux | Windows |
+| :-----: | :---: | :---: | :---: | :---: | :-----: |
+|✅|✅|✅|✅|✅|✅|
+
+
 ## ✅ Features
 
 - 📂 Parse DICOM files
