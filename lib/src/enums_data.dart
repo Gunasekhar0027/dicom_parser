@@ -1,0 +1,40 @@
+enum VR {
+  AE('Application Entity'),
+  AS('Age String'),
+  AT('Attribute Tag'),
+  CS('Code String'),
+  DA('Date'),
+  DS('Decimal String'),
+  DT('Date Time'),
+  FL('Floating Point Single'),
+  FD('Floating Point Double'),
+  IS('Integer String'),
+  LO('Long String'),
+  LT('Long Text'),
+  OB('Other Byte String'),
+  OD('Other Double'),
+  OF('Other Float'),
+  OL('Other Long'),
+  OV('Other 64-bit Very Long'),
+  OW('Other Word'),
+  PN('Person Name'),
+  SH('Short String'),
+  SL('Signed Long'),
+  SQ('Sequence of Items'),
+  SS('Signed Short'),
+  ST('Short Text'),
+  SV('Signed 64-bit Very Long'),
+  TM('Time'),
+  UC('Unlimited Characters'),
+  UI('Unique Identifier'),
+  UL('Unsigned Long'),
+  UN('Unknown'),
+  UR('URI/URL'),
+  US('Unsigned Short'),
+  UT('Unlimited Text'),
+  UV('Unsigned 64-bit Very Long');
+
+  final String description;
+
+  const VR(this.description);
+}
