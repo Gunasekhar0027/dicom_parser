@@ -36,7 +36,6 @@ Supports a wide range of DICOM Transfer Syntax UIDs for uncompressed and compres
 - `1.2.840.10008.1.2.4.70` — JPEG Lossless (First-Order Prediction)
 - `1.2.840.10008.1.2.1.98` — Deflated Explicit VR Little Endian
 
----
 
 ## Supported Photometric Interpretations
 
