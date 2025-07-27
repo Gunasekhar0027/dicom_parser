@@ -11,7 +11,7 @@ Fully implemented using Flutter, it enables seamless integration into healthcare
 | :-----: | :---: | :---: | :---: | :---: | :-----: |
 |✅|✅|✅|✅|✅|✅|
 
-![dicom_parser](files/preview.png)
+![dicom_parser](https://github.com/Gunasekhar0027/dicom_parser/blob/main/files/preview.png)
 
 
 ## Features
