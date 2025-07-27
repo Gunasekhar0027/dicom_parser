@@ -105,12 +105,19 @@ class _StartState extends State<Start> {
           if (kIsWeb) {}
           if (result != null) {
             Uint8List? fileBytes = result.files.first.bytes;
-            if (fileBytes != null) {
+            if (fileBytes != null) {Uint8List
               try {
                 final stopwatch = Stopwatch()..start();
                 print("File Picked");
                 DICOMModel dicomModel = await parseDICOM(fileBytes);
+
+                // Parsed tags from DICOM File
                 List<TagModel> tags = dicomModel.tags;
+
+                // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
+                Uint8List? parsedImageBytes = dicomModel.imageBytes;
+
+                // Get Modality of DICOM File
                 String? modality = dicomModel.getModality();
 
                 stopwatch.stop();

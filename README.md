@@ -47,6 +47,13 @@ Uint8List? fileBytes;
 // Read DICOM file bytes into fileBytes
 
 DICOMModel dicomModel = await parseDICOM(fileBytes);
+
+// Parsed tags from DICOM File
 List<TagModel> tags = dicomModel.tags;
+
+// Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
+Uint8List? parsedImageBytes = dicomModel.imageBytes;
+
+// Get Modality of DICOM File
 String? modality = dicomModel.getModality();
 ```
