@@ -47,4 +47,6 @@ Uint8List? fileBytes;
 // Read DICOM file bytes into fileBytes
 
 DICOMModel dicomModel = await parseDICOM(fileBytes);
+List<TagModel> tags = dicomModel.tags;
+String? modality = dicomModel.getModality();
 ```

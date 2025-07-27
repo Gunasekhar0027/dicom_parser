@@ -110,6 +110,8 @@ class _StartState extends State<Start> {
                 final stopwatch = Stopwatch()..start();
                 print("File Picked");
                 DICOMModel dicomModel = await parseDICOM(fileBytes);
+                List<TagModel> tags = dicomModel.tags;
+                String? modality = dicomModel.getModality();
 
                 stopwatch.stop();
                 print(
