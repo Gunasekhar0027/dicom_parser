@@ -11,7 +11,7 @@ Fully implemented using Flutter, it enables seamless integration into healthcare
 | :-----: | :---: | :---: | :---: | :---: | :-----: |
 |✅|✅|✅|✅|✅|✅|
 
-![dicom_parser](https://github.com/Gunasekhar0027/dicom_parser/blob/main/files/preview.png)
+![dicom_parser](https://gunasekhar0027.github.io/dicom_parser/files/preview.png)
 
 
 ## Features
@@ -67,3 +67,7 @@ Uint8List? parsedImageBytes = dicomModel.imageBytes;
 // Get Modality of DICOM File
 String? modality = dicomModel.getModality();
 ```
+
+
+**Developed by:** Gunasekhar Athuluri  
+**Contact:** [gunasekhar.athuluri@gmail.com](mailto:gunasekhar.athuluri@gmail.com)
