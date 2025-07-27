@@ -1,4 +1,3 @@
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'DICOM Parser',
+      title: 'dicom_parser example',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -42,7 +41,7 @@ class _StartState extends State<Start> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text(
-          "DICOM Parser",
+          'dicom_parser example',
           style: TextStyle(color: Colors.white),
         ),
       ),
@@ -50,30 +49,6 @@ class _StartState extends State<Start> {
         children: [
           if (dicomModell != null && dicomModell!.imageBytes != null) ...[
             Image.memory(dicomModell!.imageBytes!),
-            // Column(
-            //   mainAxisSize: MainAxisSize.min,
-            //   crossAxisAlignment: CrossAxisAlignment.center,
-            //   children: [
-            //     dicomTagText(
-            //         title: "${dicomModell!.getSeriesNumber()}",
-            //         subtitle: "Series Number"),
-            //     dicomTagText(
-            //         title: "${dicomModell!.getInstanceNumber()}",
-            //         subtitle: "Instance Number"),
-            //     dicomTagText(
-            //         title: "${dicomModell!.getSeriesDescription()}",
-            //         subtitle: "Series Description"),
-            //     dicomTagText(
-            //         title: "${dicomModell!.getModality()}",
-            //         subtitle: "Modality"),
-            //     dicomTagText(
-            //         title: "${dicomModell!.getPatientName()}",
-            //         subtitle: "Patient Name"),
-            //     dicomTagText(
-            //         title: "${dicomModell!.getPatientSex()}",
-            //         subtitle: "Patient Sex"),
-            //   ],
-            // ),
           ],
           if (dicomModell != null) ...[
             for (int index = 0; index < dicomModell!.tags.length; index++) ...[
@@ -133,7 +108,6 @@ class _StartState extends State<Start> {
             if (fileBytes != null) {
               try {
                 final stopwatch = Stopwatch()..start();
-
                 print("File Picked");
                 DICOMModel dicomModel = await parseDICOM(fileBytes);
 
@@ -153,19 +127,6 @@ class _StartState extends State<Start> {
         tooltip: 'Pick DICOM File',
         label: Text('Pick DICOM File'),
         icon: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget dicomTagText({required String title, required String subtitle}) {
-    return ListTile(
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontWeight: FontWeight.normal),
       ),
     );
   }

@@ -1,7 +1,7 @@
 name: dicom_parser
-description: "DICOM Parser"
+description: "dicom_parser flutter package"
 version: 0.0.1
-repository: "https://github.com/Gunasekhar0027/dicom_parser"
+repository: https://github.com/Gunasekhar0027/dicom_parser
 
 environment:
   sdk: ^3.6.1
