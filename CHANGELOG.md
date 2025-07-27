@@ -21,3 +21,7 @@
 ## 0.0.6
 
 * Updated README File with details
+
+## 0.0.7
+
+* Added DICOMParser Class

@@ -108,26 +108,23 @@ class _StartState extends State<Start> {
             Uint8List? fileBytes = result.files.first.bytes;
             if (fileBytes != null) {
               try {
-                final stopwatch = Stopwatch()..start();
-                print("File Picked");
-                DICOMModel dicomModel = await parseDICOM(fileBytes);
+                var dicomParser = DICOMParser();
+                DICOMModel? dicomModel =
+                    await dicomParser.parseDICOMFile(fileBytes);
+                if (dicomModel != null) {
+                  // Parsed tags from DICOM File
+                  List<TagModel> tags = dicomModel.tags;
 
-                // Parsed tags from DICOM File
-                List<TagModel> tags = dicomModel.tags;
+                  // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
+                  Uint8List? parsedImageBytes = dicomModel.imageBytes;
 
-                // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
-                Uint8List? parsedImageBytes = dicomModel.imageBytes;
+                  // Get Modality of DICOM File
+                  String? modality = dicomModel.getModality();
 
-                // Get Modality of DICOM File
-                String? modality = dicomModel.getModality();
-
-                stopwatch.stop();
-                print(
-                    '🕒🕒🕒🕒🕒🕒 parseDICOM took ${stopwatch.elapsedMilliseconds / 1000} ms');
-
-                setState(() {
-                  dicomModell = dicomModel;
-                });
+                  setState(() {
+                    dicomModell = dicomModel;
+                  });
+                }
               } catch (e) {
                 print(e);
               }
