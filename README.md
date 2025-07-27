@@ -1,4 +1,4 @@
-# 🩻 DICOM Parser in Flutter (Dart)
+# DICOM Parser in Flutter (Dart)
 
 This project is a fully Dart-based DICOM parser, developed entirely using the Flutter framework. It enables cross-platform parsing and rendering of DICOM medical images across mobile, web, and desktop applications — **without relying on native C/C++ libraries**.
 
@@ -11,7 +11,7 @@ The parser supports reading, decoding, and interpreting core medical imaging dat
 |✅|✅|✅|✅|✅|✅|
 
 
-## ✅ Features
+## Features
 
 - 📂 Parse DICOM files
 - 🔄 Support for various Transfer Syntaxes
@@ -19,7 +19,7 @@ The parser supports reading, decoding, and interpreting core medical imaging dat
 - 💻 Works on Android, iOS, Web, macOS, Linux, and Windows
 - ❌ No native dependencies — 100% Dart
 
-## 📦 Supported Transfer Syntaxes
+## Supported Transfer Syntaxes
 
 Supports a wide range of DICOM Transfer Syntax UIDs for uncompressed and compressed image data:
 
@@ -35,7 +35,7 @@ Supports a wide range of DICOM Transfer Syntax UIDs for uncompressed and compres
 
 ---
 
-## 🎨 Supported Photometric Interpretations
+## Supported Photometric Interpretations
 
 - `MONOCHROME1` — Inverted grayscale (0 = white)
 - `MONOCHROME2` — Standard grayscale (0 = black)
