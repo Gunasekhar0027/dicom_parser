@@ -1,21 +1,40 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# 🩻 DICOM Parser in Flutter (Dart)
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+This project is a fully Dart-based DICOM parser, developed entirely using the Flutter framework. It enables cross-platform parsing and rendering of DICOM medical images across mobile, web, and desktop applications — **without relying on native C/C++ libraries**.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+The parser supports reading, decoding, and interpreting core medical imaging data, making it a powerful tool for developers building health-tech applications.
 
-A pure Dart DICOM parser for Flutter supporting cross-platform decoding of medical images (DICOM files) with support for various transfer syntaxes and photometric interpretations — no native dependencies required.
+## ✅ Features
 
-## Features
+- 📂 Parse DICOM files
+- 🔄 Support for various Transfer Syntaxes
+- 🎨 Support for multiple Photometric Interpretations
+- 💻 Works on Android, iOS, Web, macOS, Linux, and Windows
+- ❌ No native dependencies — 100% Dart
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+## 📦 Supported Transfer Syntaxes
+
+Supports a wide range of DICOM Transfer Syntax UIDs for uncompressed and compressed image data:
+
+- `1.2.840.10008.1.2` — Implicit VR Little Endian
+- `1.2.840.10008.1.2.1` — Explicit VR Little Endian
+- `1.2.840.10008.1.2.2` — Explicit VR Big Endian
+- `1.2.840.10008.1.2.5` — RLE Lossless
+- `1.2.840.10008.1.2.4.50` — JPEG Baseline (8-bit)
+- `1.2.840.10008.1.2.4.51` — JPEG Extended (12-bit)
+- `1.2.840.10008.1.2.4.57` — JPEG Lossless (Non-Hierarchical)
+- `1.2.840.10008.1.2.4.70` — JPEG Lossless (First-Order Prediction)
+- `1.2.840.10008.1.2.1.98` — Deflated Explicit VR Little Endian
+
+---
+
+## 🎨 Supported Photometric Interpretations
+
+- `MONOCHROME1` — Inverted grayscale (0 = white)
+- `MONOCHROME2` — Standard grayscale (0 = black)
+- `RGB` — Color images
+- `PALETTE COLOR` — Indexed color with LUTs
+- `YBR_FULL` — YUV color encoding (JPEG-related)
 
 ## Getting started
 
@@ -28,11 +47,12 @@ TODO: Include short and useful examples for package users. Add longer examples
 to `/example` folder.
 
 ```dart
-const like = 'sample';
+import 'package:dicom_parser/dicom_parser.dart';
+import 'dart:typed_data';
+
+Uint8List? fileBytes;
+
+// Read DICOM file bytes into fileBytes
+
+DICOMModel dicomModel = await parseDICOM(fileBytes);
 ```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
