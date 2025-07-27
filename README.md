@@ -11,8 +11,7 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A pure Dart DICOM parser for Flutter supporting cross-platform decoding of medical images (DICOM files) with support for various transfer syntaxes and photometric interpretations — no native dependencies required.
 
 ## Features
 
