@@ -36,15 +36,7 @@ Supports a wide range of DICOM Transfer Syntax UIDs for uncompressed and compres
 - `PALETTE COLOR` — Indexed color with LUTs
 - `YBR_FULL` — YUV color encoding (JPEG-related)
 
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
 ## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
 
 ```dart
 import 'package:dicom_parser/dicom_parser.dart';
