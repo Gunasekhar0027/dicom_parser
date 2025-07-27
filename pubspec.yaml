@@ -1,6 +1,6 @@
 name: dicom_parser
-description: "dicom_parser is a pure Dart-based package for parsing and rendering DICOM medical images across mobile, web, and desktop platforms — without relying on any native C/C++ libraries. Fully implemented using Flutter, it enables seamless integration into healthcare and medical imaging applications. Use dicom_parser to effortlessly build DICOM viewers for all platforms."
-version: 0.0.8
+description: "A pure Dart package to parse and render DICOM medical images on mobile, web, and desktop—no native code required. Ideal for cross-platform DICOM viewers in Flutter."
+version: 0.0.9
 repository: https://github.com/Gunasekhar0027/dicom_parser
 
 environment:

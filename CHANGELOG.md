@@ -29,3 +29,7 @@
 ## 0.0.8
 
 * Improved Code Structure
+
+## 0.0.9
+
+* Description Update
