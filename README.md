@@ -10,6 +10,8 @@ The parser supports reading, decoding, and interpreting core medical imaging dat
 | :-----: | :---: | :---: | :---: | :---: | :-----: |
 |✅|✅|✅|✅|✅|✅|
 
+![dicom_parser](files/preview.png)
+
 
 ## Features
 

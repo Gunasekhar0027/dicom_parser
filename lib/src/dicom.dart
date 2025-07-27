@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-
-import 'dicom_exceptions.dart';
-import 'tag_model.dart';
-
 import 'constants.dart';
+import 'dicom_exceptions.dart';
+import 'dicom_image_parser.dart';
 import 'dicom_model.dart';
 import 'dicom_tags_library.dart';
-import 'dicom_image_parser.dart';
+import 'tag_model.dart';
 
 Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
   final preProcessedDICOMStrings = dicomLibraryData.split('\n');
@@ -65,8 +63,8 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
         ByteData.sublistView(Uint8List.fromList(dicomDataInput));
     int offset = startOffset;
     while (offset + 8 <= byteDataInput.lengthInBytes) {
-      bool isMetaFileInfoGroup = dicomDataInput[offset] == 2 &&
-          dicomDataInput[offset + 1] == 0;
+      bool isMetaFileInfoGroup =
+          dicomDataInput[offset] == 2 && dicomDataInput[offset + 1] == 0;
 
       // Read Group
       String group = byteDataInput

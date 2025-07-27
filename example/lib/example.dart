@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'dicom_parser example',
+      title: 'dicom_parser',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -38,17 +38,18 @@ class _StartState extends State<Start> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text(
-          'dicom_parser example',
+          'dicom_parser',
           style: TextStyle(color: Colors.white),
         ),
       ),
       body: ListView(
         children: [
           if (dicomModell != null && dicomModell!.imageBytes != null) ...[
-            Image.memory(dicomModell!.imageBytes!),
+            InteractiveViewer(child: Image.memory(dicomModell!.imageBytes!)),
           ],
           if (dicomModell != null) ...[
             for (int index = 0; index < dicomModell!.tags.length; index++) ...[

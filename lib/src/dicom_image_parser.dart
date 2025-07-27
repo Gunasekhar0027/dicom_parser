@@ -1,10 +1,10 @@
-
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
-import 'tag_model.dart';
 import 'package:image/image.dart' as img;
 
 import 'constants.dart';
+import 'tag_model.dart';
 
 Future<Uint8List> parseDICOMPixelData({
   required List<int> pixelData,
@@ -435,10 +435,13 @@ Future<Uint8List> parseDICOMPixelData({
                 : byteData.getInt16(i * bytesPerSample, endian));
 
         if (pixelRepresentation == 1) {
-          value += (1 << (bitsStored - 1)); // shift signed values
+          // Signed
+          value = byteData.getInt16(i * bytesPerSample, endian);
         } else {
-          value &= (1 << bitsStored) - 1; // mask for unsigned
+          // Unsigned
+          value = byteData.getUint16(i * bytesPerSample, endian);
         }
+        value &= (1 << bitsStored) - 1;
 
         if (value < minPixel) minPixel = value;
         if (value > maxPixel) maxPixel = value;
@@ -459,6 +462,13 @@ Future<Uint8List> parseDICOMPixelData({
           ? int.tryParse(wwTag.value) ?? (maxPixel - minPixel)
           : (maxPixel - minPixel);
 
+      if (ww <= 0 || ww > (maxPixel - minPixel)) {
+        ww = maxPixel - minPixel;
+      }
+      if (wc < minPixel || wc > maxPixel) {
+        wc = (maxPixel + minPixel) ~/ 2;
+      }
+
       if (ww <= 0) ww = 1;
       final double windowMin = wc - ww / 2.0;
       final double windowMax = wc + ww / 2.0;
@@ -471,10 +481,13 @@ Future<Uint8List> parseDICOMPixelData({
                 : byteData.getInt16(i * bytesPerSample, endian));
 
         if (pixelRepresentation == 1) {
-          value += (1 << (bitsStored - 1));
+          // Signed
+          value = byteData.getInt16(i * bytesPerSample, endian);
         } else {
-          value &= (1 << bitsStored) - 1;
+          // Unsigned
+          value = byteData.getUint16(i * bytesPerSample, endian);
         }
+        value &= (1 << bitsStored) - 1;
 
         double normalized;
         if (value <= windowMin) {
