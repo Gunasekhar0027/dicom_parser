@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 import 'constants.dart';
@@ -11,8 +10,6 @@ Future<Uint8List> parseDICOMPixelData({
   required List<TagModel> tags,
   required Endian endian,
 }) async {
-  print("pixelData.length");
-  print(pixelData.length);
   String transferSyntax = tags
       .firstWhere((tag) => tag.getTag() == "0002,0010")
       .value
@@ -31,28 +28,28 @@ Future<Uint8List> parseDICOMPixelData({
   int columns =
       int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0011").value);
 
-  List<double> pixelSpacingData() {
-    const pixelSpacingTag = "0028,0030";
-    final tag = tags.cast<TagModel?>().firstWhere(
-          (tag) => tag?.getTag() == pixelSpacingTag,
-          orElse: () => null,
-        );
-    try {
-      return tag?.value.split('\\').map((e) => double.parse(e)).toList() ??
-          [1.0, 1.0];
-    } catch (e) {
-      return [1.0, 1.0];
-    }
-  }
+  // List<double> pixelSpacingData() {
+  //   const pixelSpacingTag = "0028,0030";
+  //   final tag = tags.cast<TagModel?>().firstWhere(
+  //         (tag) => tag?.getTag() == pixelSpacingTag,
+  //     orElse: () => null,
+  //   );
+  //   try {
+  //     return tag?.value.split('\\').map((e) => double.parse(e)).toList() ??
+  //         [1.0, 1.0];
+  //   } catch (e) {
+  //     return [1.0, 1.0];
+  //   }
+  // }
 
-  List<double> pixelSpacing = pixelSpacingData();
+  // List<double> pixelSpacing = pixelSpacingData();
 
   int bitsAllocated =
       int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0100").value);
   int bitsStored =
       int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0101").value);
-  int highBit =
-      int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0102").value);
+  // int highBit =
+  //     int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0102").value);
   int pixelRepresentation =
       int.parse(tags.firstWhere((tag) => tag.getTag() == "0028,0103").value);
 
@@ -62,17 +59,17 @@ Future<Uint8List> parseDICOMPixelData({
     planarConfiguration = int.parse(planarTag.first.value);
   }
 
-  print("Transfer Syntax: $transferSyntax");
-  print("Samples Per Pixel: $samplesPerPixel");
-  print("Photometric Interpretation: $photometricInterpretation");
-  print("Rows: $rows");
-  print("Columns: $columns");
-  print("Pixel Spacing: $pixelSpacing mm");
-  print("Bits Allocated: $bitsAllocated");
-  print("Bits Stored: $bitsStored");
-  print("High Bit: $highBit");
-  print("Pixel Representation: $pixelRepresentation");
-  print("Planar Configuration: $planarConfiguration");
+  // print("Transfer Syntax: $transferSyntax");
+  // print("Samples Per Pixel: $samplesPerPixel");
+  // print("Photometric Interpretation: $photometricInterpretation");
+  // print("Rows: $rows");
+  // print("Columns: $columns");
+  // print("Pixel Spacing: $pixelSpacing mm");
+  // print("Bits Allocated: $bitsAllocated");
+  // print("Bits Stored: $bitsStored");
+  // print("High Bit: $highBit");
+  // print("Pixel Representation: $pixelRepresentation");
+  // print("Planar Configuration: $planarConfiguration");
 
   int width = columns;
   int height = rows;
@@ -82,12 +79,11 @@ Future<Uint8List> parseDICOMPixelData({
   final bool isMonochrome1 = photometricInterpretation == 'MONOCHROME1';
   final bool isMonochrome2 = photometricInterpretation == 'MONOCHROME2';
   final bool isRGB = photometricInterpretation == 'RGB';
-  final bool isYBR_FULL = photometricInterpretation == 'YBR_FULL';
-  final bool isPALETTECOLOR = photometricInterpretation == 'PALETTE COLOR';
+  final bool isYbrFull = photometricInterpretation == 'YBR_FULL';
+  final bool isPaletteColor = photometricInterpretation == 'PALETTE COLOR';
 // JPEG-LS Handling
   if (transferSyntax == kJpegLsLossless ||
       transferSyntax == kJpegLsNearLossless) {
-    print("Detected JPEG-LS compressed pixel data");
     throw UnsupportedError(
         'JPEG-LS decoding is not supported natively in Dart.\n'
         'Transfer Syntax: $transferSyntax');
@@ -95,7 +91,6 @@ Future<Uint8List> parseDICOMPixelData({
 
 // JPEG 2000 Handling
   if (transferSyntax == kJpeg2000Lossless || transferSyntax == kJpeg2000Lossy) {
-    print("Detected JPEG 2000 compressed pixel data");
     throw UnsupportedError(
         'JPEG 2000 decoding is not supported natively in Dart.\n'
         'Transfer Syntax: $transferSyntax');
@@ -108,7 +103,7 @@ Future<Uint8List> parseDICOMPixelData({
       endian: endian,
     );
   }
-  if (isPALETTECOLOR) {
+  if (isPaletteColor) {
     if (transferSyntax == kRleLossless) {
       // RLE Lossless
       // Decompress first
@@ -372,7 +367,7 @@ Future<Uint8List> parseDICOMPixelData({
         final y = i ~/ width;
         image.setPixelRgba(x, y, gray, gray, gray, 255);
       }
-    } else if (isYBR_FULL && samplesPerPixel == 3 && bitsAllocated == 8) {
+    } else if (isYbrFull && samplesPerPixel == 3 && bitsAllocated == 8) {
       if (planarConfiguration == 0) {
         for (int i = 0; i < pixelCount; i++) {
           final y = output[i * 3].toDouble();
@@ -572,7 +567,9 @@ List<int>? getPaletteLut(
   );
 
   if (dataTag.valueBytes.isEmpty) {
-    print('❌ No LUT data in $dataTagStr');
+    if (kDebugMode) {
+      print('❌ No LUT data in $dataTagStr');
+    }
     return null;
   }
 
@@ -591,13 +588,17 @@ List<int>? getPaletteLut(
       bitsPerEntry = int.tryParse(parts[2]) ?? 8;
     }
   } else {
-    print(
-        '❌ Invalid descriptor value for $descriptorTagStr: ${descriptorTag.value}');
+    if (kDebugMode) {
+      print(
+          '❌ Invalid descriptor value for $descriptorTagStr: ${descriptorTag.value}');
+    }
     return null;
   }
 
   if (numberOfEntries == 0) {
-    print('❌ Descriptor has 0 entries for $descriptorTagStr');
+    if (kDebugMode) {
+      print('❌ Descriptor has 0 entries for $descriptorTagStr');
+    }
     return null;
   }
 

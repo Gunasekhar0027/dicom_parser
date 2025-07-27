@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 import 'constants.dart';
 import 'dicom_exceptions.dart';
@@ -31,8 +32,7 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
   if (dicomData.length < 138) {
     throw DicomParseException("Invalid DICOM File");
   }
-  Uint8List preamble = dicomData.sublist(0, 128);
-  print(preamble);
+  //Uint8List preamble = dicomData.sublist(0, 128);
   Uint8List dicomPrefix = dicomData.sublist(128, 132);
 
   if (String.fromCharCodes(dicomPrefix) != "DICM") {
@@ -81,7 +81,6 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           .toRadixString(16)
           .padLeft(4, '0');
       offset += 2;
-      print(group + "," + element);
 
       // Read VR & Length
       int length = 0;
@@ -108,8 +107,6 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           offset += 2;
         }
       }
-      print(length);
-      print(vr);
 
       // Value Bytes
       List<int> valueBytes = [];
@@ -152,13 +149,17 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
 
           // Fragment item (FFFE,E000)
           if (itemTagGroup != 0xFFFE || itemTagElement != 0xE000) {
-            print(
-                "⚠️ Unexpected item tag in encapsulated Pixel Data at offset $offset.");
+            if (kDebugMode) {
+              print(
+                  "⚠️ Unexpected item tag in encapsulated Pixel Data at offset $offset.");
+            }
             break;
           }
 
           if (offset + itemLength > byteDataInput.lengthInBytes) {
-            print("⚠️ Invalid JPEG fragment size. Skipping remaining.");
+            if (kDebugMode) {
+              print("⚠️ Invalid JPEG fragment size. Skipping remaining.");
+            }
             break;
           }
 
@@ -172,19 +173,21 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
         valueBytes = dicomDataInput.sublist(offset, offset + length);
         offset += length;
       } else {
-        print("⚠️ Invalid or unknown length at offset $offset. Skipping tag.");
+        if (kDebugMode) {
+          print(
+              "⚠️ Invalid or unknown length at offset $offset. Skipping tag.");
+        }
         break;
       }
-
-      print(valueBytes.length < 200 ? valueBytes : "<200");
 
       dynamic value;
       if (group == "7fe0") {
         if (element == "0010") {
           imageBytes = valueBytes.toList();
-          print("Standard Pixel Data (7FE0,0010) extracted.");
         } else if (element == "0008") {
-          print("Float Pixel Data (7FE0,0008) found.");
+          if (kDebugMode) {
+            print("Float Pixel Data (7FE0,0008) found.");
+          }
 
           final floatList = <double>[];
           final byteData = ByteData.sublistView(Uint8List.fromList(valueBytes));
@@ -193,7 +196,9 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           }
 
           if (floatList.isEmpty) {
-            print("⚠️ Float Pixel Data is empty. Skipping.");
+            if (kDebugMode) {
+              print("⚠️ Float Pixel Data is empty. Skipping.");
+            }
           } else {
             double minVal = floatList.first;
             double maxVal = floatList.first;
@@ -210,7 +215,9 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
             }).toList();
 
             imageBytes = Uint8List.fromList(normalizedBytes);
-            print("✅ Float Pixel Data normalized to 8-bit grayscale.");
+            if (kDebugMode) {
+              print("✅ Float Pixel Data normalized to 8-bit grayscale.");
+            }
           }
         }
       } else if (numericVRs.contains(vr)) {
@@ -255,15 +262,21 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
               startOffset: 0,
             );
           } else {
-            print("Skipping SQ parsing due to insufficient bytes.");
+            if (kDebugMode) {
+              print("Skipping SQ parsing due to insufficient bytes.");
+            }
           }
         } catch (e) {
-          print("Error while parsing SQ: $e");
+          if (kDebugMode) {
+            print("Error while parsing SQ: $e");
+          }
         }
       } else if (group == "fffe") {
         if (element == "e00d" || element == "e0dd") {
           // Sequence/item delimiters – skip
-          print("Skipping special marker: $group,$element");
+          if (kDebugMode) {
+            print("Skipping special marker: $group,$element");
+          }
           offset += 8; // 4 bytes tag + 4 bytes length
           continue;
         } else if (element == "e000") {
@@ -292,7 +305,9 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           } else {
             // Defined-length item
             if ((offset + itemLength) > byteDataInput.lengthInBytes) {
-              print("⚠️ Sequence item length exceeds buffer.");
+              if (kDebugMode) {
+                print("⚠️ Sequence item length exceeds buffer.");
+              }
               break;
             }
 
@@ -307,7 +322,9 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
             continue;
           }
         } else {
-          print("⚠️ Unknown FFFE element: $element. Skipping.");
+          if (kDebugMode) {
+            print("⚠️ Unknown FFFE element: $element. Skipping.");
+          }
           offset += 8;
           continue;
         }
@@ -329,9 +346,6 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
         valueBytes: valueBytes,
         tagDescription: "",
       );
-
-      print(
-          "Value:    ${tagModel.value.length < 200 ? tagModel.value : ">200"}");
       tagModel.tagDescription = tagDescriptionMap[tagModel.getTag()] ?? "";
 
       if (tagModel.group == "0002" && tagModel.element == "0010") {
@@ -348,7 +362,6 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
     }
   }
 
-  print("Next Image parsing");
   await parseDICOMTagsData(dicomDataInput: dicomData, startOffset: 132);
 
   tags.removeWhere((tag) =>
@@ -364,8 +377,12 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
       pngBytes = await parseDICOMPixelData(
           pixelData: imageBytes, tags: tags, endian: currentEndian);
     } catch (e) {
-      print("Pixel Data Parse Error");
-      print(e);
+      if (kDebugMode) {
+        print("Pixel Data Parse Error");
+      }
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 

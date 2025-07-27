@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'src/dicom.dart';
 
+import 'src/dicom.dart';
 import 'src/dicom_model.dart';
 
 export 'src/dicom_model.dart';

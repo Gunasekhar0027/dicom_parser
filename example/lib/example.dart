@@ -114,19 +114,30 @@ class _StartState extends State<Start> {
                 if (dicomModel != null) {
                   // Parsed tags from DICOM File
                   List<TagModel> tags = dicomModel.tags;
+                  if (kDebugMode) {
+                    print(tags);
+                  }
 
                   // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
                   Uint8List? parsedImageBytes = dicomModel.imageBytes;
+                  if (kDebugMode) {
+                    print(parsedImageBytes);
+                  }
 
                   // Get Modality of DICOM File
                   String? modality = dicomModel.getModality();
+                  if (kDebugMode) {
+                    print(modality);
+                  }
 
                   setState(() {
                     dicomModell = dicomModel;
                   });
                 }
               } catch (e) {
-                print(e);
+                if (kDebugMode) {
+                  print(e);
+                }
               }
             }
           }

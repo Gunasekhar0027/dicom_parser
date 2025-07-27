@@ -25,3 +25,7 @@
 ## 0.0.7
 
 * Added DICOMParser Class
+
+## 0.0.8
+
+* Improved Code Structure
