@@ -33,3 +33,7 @@
 ## 0.0.9
 
 * Description Update
+
+## 0.0.10
+
+* License Update
