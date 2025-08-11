@@ -378,7 +378,7 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           pixelData: imageBytes, tags: tags, endian: currentEndian);
     } catch (e) {
       if (kDebugMode) {
-        print("Pixel Data Parse Error");
+        print("Pixel Data Parse Error: $e");
       }
       if (kDebugMode) {
         print(e);

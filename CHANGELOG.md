@@ -37,3 +37,8 @@
 ## 0.0.10
 
 * License Update
+
+
+## 0.0.11
+
+* Bug fix for uncompressed YBR_FULL format DICOM image parsing. 

@@ -53,49 +53,9 @@ class _StartState extends State<Start> {
           ],
           if (dicomModell != null) ...[
             for (int index = 0; index < dicomModell!.tags.length; index++) ...[
-              Builder(
-                builder: (context) {
-                  final tag = dicomModell!.tags[index];
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        leading: Text(
-                          tag.vr,
-                          style: TextStyle(fontSize: 20),
-                        ),
-                        title: Text(
-                          '(${tag.group}, ${tag.element})',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        trailing: Text(
-                          "$index",
-                          style: TextStyle(fontSize: 10),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tag.tagDescription,
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                            Text(
-                              (tag.value.length > 500 && tag.vr != "SQ")
-                                  ? tag.value.substring(0, 500)
-                                  : tag.value,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(
-                        color: Colors.black,
-                      ),
-                    ],
-                  );
-                },
-              ),
+              _buildTagWidget(dicomModell!.tags[index], 0, index),
             ],
-          ]
+          ],
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -115,19 +75,19 @@ class _StartState extends State<Start> {
                   // Parsed tags from DICOM File
                   List<TagModel> tags = dicomModel.tags;
                   if (kDebugMode) {
-                    print(tags);
+                    //print(tags);
                   }
 
                   // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
                   Uint8List? parsedImageBytes = dicomModel.imageBytes;
                   if (kDebugMode) {
-                    print(parsedImageBytes);
+                    //print(parsedImageBytes);
                   }
 
                   // Get Modality of DICOM File
                   String? modality = dicomModel.getModality();
                   if (kDebugMode) {
-                    print(modality);
+                    // print(modality);
                   }
 
                   setState(() {
@@ -145,6 +105,42 @@ class _StartState extends State<Start> {
         tooltip: 'Pick DICOM File',
         label: Text('Pick DICOM File'),
         icon: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildTagWidget(TagModel tag, int depth, int index) {
+    return Padding(
+      padding: EdgeInsets.only(left: 16.0 * depth),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: Text(tag.vr, style: TextStyle(fontSize: 16)),
+            title: Text(
+              '(${tag.group}, ${tag.element})',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            tileColor: (tag.vr == "SQ")
+                ? Colors.yellow
+                : (tag.group == "fffe" ? Colors.blue : Colors.white),
+            trailing: Text("$index", style: TextStyle(fontSize: 10)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(tag.tagDescription, style: TextStyle(color: Colors.blue)),
+                if (tag.vr != "SQ") ...[
+                  Text(
+                    (tag.value.length > 500 && tag.vr != "SQ")
+                        ? tag.value.substring(0, 500)
+                        : tag.value,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Divider(color: Colors.grey.shade400),
+        ],
       ),
     );
   }

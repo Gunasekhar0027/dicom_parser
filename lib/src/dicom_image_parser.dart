@@ -64,10 +64,10 @@ Future<Uint8List> parseDICOMPixelData({
   // print("Photometric Interpretation: $photometricInterpretation");
   // print("Rows: $rows");
   // print("Columns: $columns");
-  // print("Pixel Spacing: $pixelSpacing mm");
+  // //print("Pixel Spacing: $pixelSpacing mm");
   // print("Bits Allocated: $bitsAllocated");
   // print("Bits Stored: $bitsStored");
-  // print("High Bit: $highBit");
+  // //print("High Bit: $highBit");
   // print("Pixel Representation: $pixelRepresentation");
   // print("Planar Configuration: $planarConfiguration");
 
@@ -76,12 +76,12 @@ Future<Uint8List> parseDICOMPixelData({
   int pixelCount = width * height;
   final image = img.Image(width: width, height: height);
 
-  final bool isMonochrome1 = photometricInterpretation == 'MONOCHROME1';
-  final bool isMonochrome2 = photometricInterpretation == 'MONOCHROME2';
-  final bool isRGB = photometricInterpretation == 'RGB';
-  final bool isYbrFull = photometricInterpretation == 'YBR_FULL';
-  final bool isPaletteColor = photometricInterpretation == 'PALETTE COLOR';
-// JPEG-LS Handling
+  final bool isMonochrome1 = (photometricInterpretation == 'MONOCHROME1');
+  final bool isMonochrome2 = (photometricInterpretation == 'MONOCHROME2');
+  final bool isRGB = (photometricInterpretation == 'RGB');
+  final bool isYbrFull = (photometricInterpretation == 'YBR_FULL');
+  final bool isPaletteColor = (photometricInterpretation == 'PALETTE COLOR');
+  // JPEG-LS Handling
   if (transferSyntax == kJpegLsLossless ||
       transferSyntax == kJpegLsNearLossless) {
     throw UnsupportedError(
@@ -89,7 +89,7 @@ Future<Uint8List> parseDICOMPixelData({
         'Transfer Syntax: $transferSyntax');
   }
 
-// JPEG 2000 Handling
+  // JPEG 2000 Handling
   if (transferSyntax == kJpeg2000Lossless || transferSyntax == kJpeg2000Lossy) {
     throw UnsupportedError(
         'JPEG 2000 decoding is not supported natively in Dart.\n'
@@ -103,7 +103,9 @@ Future<Uint8List> parseDICOMPixelData({
       endian: endian,
     );
   }
-  if (isPaletteColor) {
+
+  /// parsePaletteColorDICOMImage()
+  parsePaletteColorDICOMImage() async {
     if (transferSyntax == kRleLossless) {
       // RLE Lossless
       // Decompress first
@@ -119,7 +121,7 @@ Future<Uint8List> parseDICOMPixelData({
             width * height, (i) => byteData.getUint16(i * 2, endian));
       }
     }
-    // Handle all JPEG variants
+    // Handle JPEG variants
     if (transferSyntax == kJpegBaseline8Bit ||
         transferSyntax == kJpegExtended12Bit ||
         transferSyntax == kJpegLosslessNh ||
@@ -177,14 +179,16 @@ Future<Uint8List> parseDICOMPixelData({
     return Uint8List.fromList(img.encodePng(image));
   }
 
+  // PALETTE_COLOR
+  if (isPaletteColor) {
+    return parsePaletteColorDICOMImage();
+  }
+
   final int bytesPerSample = bitsAllocated ~/ 8;
   final byteData = Uint8List.fromList(pixelData).buffer.asByteData();
 
-  // Handle compressed formats
-  if (transferSyntax == kJpegBaseline8Bit ||
-      transferSyntax == kJpegExtended12Bit ||
-      transferSyntax == kJpegLosslessNh ||
-      transferSyntax == kJpegLosslessNhFirstOrder) {
+  /// parseCompressedJpegDicomImage()
+  parseCompressedJpegDicomImage() async {
     // Search for JPEG SOI (start of image) marker 0xFFD8 and EOI 0xFFD9
     final data = Uint8List.fromList(pixelData);
 
@@ -220,8 +224,16 @@ Future<Uint8List> parseDICOMPixelData({
     return Uint8List.fromList(pngBytes);
   }
 
-  // Handle RLE Lossless compression
-  if (transferSyntax == kRleLossless) {
+  // Handle compressed Jpeg formats
+  if (transferSyntax == kJpegBaseline8Bit ||
+      transferSyntax == kJpegExtended12Bit ||
+      transferSyntax == kJpegLosslessNh ||
+      transferSyntax == kJpegLosslessNhFirstOrder) {
+    return parseCompressedJpegDicomImage();
+  }
+
+  /// parseRLELosslessDicomImage()
+  parseRLELosslessDicomImage() async {
     // RLE compressed data has a 64-byte header followed by segments
     final data = Uint8List.fromList(pixelData);
     if (data.length < 64) {
@@ -284,6 +296,7 @@ Future<Uint8List> parseDICOMPixelData({
       }
     }
 
+    // Monochrome1 & Monochrome2
     if (isMonochrome1 || isMonochrome2) {
       int minPixel = 65535;
       int maxPixel = 0;
@@ -367,7 +380,10 @@ Future<Uint8List> parseDICOMPixelData({
         final y = i ~/ width;
         image.setPixelRgba(x, y, gray, gray, gray, 255);
       }
-    } else if (isYbrFull && samplesPerPixel == 3 && bitsAllocated == 8) {
+    }
+    // YBR_FULL
+    else if (isYbrFull && samplesPerPixel == 3 && bitsAllocated == 8) {
+      // planar config 0
       if (planarConfiguration == 0) {
         for (int i = 0; i < pixelCount; i++) {
           final y = output[i * 3].toDouble();
@@ -385,7 +401,9 @@ Future<Uint8List> parseDICOMPixelData({
           final yPos = i ~/ width;
           image.setPixelRgba(xPos, yPos, r, g, b, 255);
         }
-      } else if (planarConfiguration == 1) {
+      }
+      // planar config 1
+      else if (planarConfiguration == 1) {
         final planeSize = pixelCount;
         for (int i = 0; i < pixelCount; i++) {
           final y = byteData.getUint8(i);
@@ -405,7 +423,9 @@ Future<Uint8List> parseDICOMPixelData({
       }
 
       return Uint8List.fromList(img.encodePng(image));
-    } else {
+    }
+    // else
+    else {
       throw UnsupportedError(
           'Unsupported photometric interpretation: $photometricInterpretation');
     }
@@ -413,10 +433,13 @@ Future<Uint8List> parseDICOMPixelData({
     return Uint8List.fromList(img.encodePng(image));
   }
 
-  // Handle uncompressed formats (Implicit/Explicit VR Little/Big Endian)
-  if (transferSyntax == kImplicitVrLittleEndian ||
-      transferSyntax == kExplicitVrLittleEndian ||
-      transferSyntax == kExplicitVrBigEndian) {
+  // Handle RLE Lossless compression
+  if (transferSyntax == kRleLossless) {
+    return parseRLELosslessDicomImage();
+  }
+
+  /// parseUncompressedDICOMImage()
+  parseUncompressedDICOMImage() async {
     // Existing MONOCHROME1 / MONOCHROME2 handling
     if (isMonochrome1 || isMonochrome2) {
       int minPixel = 65535;
@@ -501,7 +524,9 @@ Future<Uint8List> parseDICOMPixelData({
         final y = i ~/ width;
         image.setPixelRgba(x, y, gray, gray, gray, 255);
       }
-    } else if (isRGB && samplesPerPixel == 3 && bitsAllocated == 8) {
+    }
+    // RGB
+    else if (isRGB && samplesPerPixel == 3 && bitsAllocated == 8) {
       if (planarConfiguration == 0) {
         // RGBRGBRGB... format
         for (int i = 0; i < pixelCount; i++) {
@@ -526,12 +551,66 @@ Future<Uint8List> parseDICOMPixelData({
           image.setPixelRgba(x, y, r, g, b, 255);
         }
       }
-    } else {
+    }
+    // YBR_FULL
+    else if (isYbrFull && samplesPerPixel == 3 && bitsAllocated == 8) {
+      // planar config 0
+      if (planarConfiguration == 0) {
+        // Interleaved: YCbCr YCbCr YCbCr ...
+        for (int i = 0; i < pixelCount; i++) {
+          final yVal = byteData.getUint8(i * 3).toDouble();
+          final cb = byteData.getUint8(i * 3 + 1).toDouble();
+          final cr = byteData.getUint8(i * 3 + 2).toDouble();
+
+          // Convert YCbCr to RGB using ITU-R BT.601
+          final r = (yVal + 1.402 * (cr - 128)).clamp(0, 255).toInt();
+          final g = (yVal - 0.344136 * (cb - 128) - 0.714136 * (cr - 128))
+              .clamp(0, 255)
+              .toInt();
+          final b = (yVal + 1.772 * (cb - 128)).clamp(0, 255).toInt();
+
+          final x = i % width;
+          final y = i ~/ width;
+          image.setPixelRgba(x, y, r, g, b, 255);
+        }
+      }
+      // planar config 1
+      else if (planarConfiguration == 1) {
+        // Planar: all Y, then all Cb, then all Cr
+        final planeSize = pixelCount;
+        for (int i = 0; i < pixelCount; i++) {
+          final yVal = byteData.getUint8(i).toDouble();
+          final cb = byteData.getUint8(i + planeSize).toDouble();
+          final cr = byteData.getUint8(i + 2 * planeSize).toDouble();
+
+          final r = (yVal + 1.402 * (cr - 128)).clamp(0, 255).toInt();
+          final g = (yVal - 0.344136 * (cb - 128) - 0.714136 * (cr - 128))
+              .clamp(0, 255)
+              .toInt();
+          final b = (yVal + 1.772 * (cb - 128)).clamp(0, 255).toInt();
+
+          final x = i % width;
+          final y = i ~/ width;
+          image.setPixelRgba(x, y, r, g, b, 255);
+        }
+      }
+
+      return Uint8List.fromList(img.encodePng(image));
+    }
+    // else
+    else {
       throw UnsupportedError(
           'Unsupported photometric interpretation: $photometricInterpretation');
     }
 
     return Uint8List.fromList(img.encodePng(image));
+  }
+
+  // Handle uncompressed formats (Implicit/Explicit VR Little/Big Endian)
+  if (transferSyntax == kImplicitVrLittleEndian ||
+      transferSyntax == kExplicitVrLittleEndian ||
+      transferSyntax == kExplicitVrBigEndian) {
+    return parseUncompressedDICOMImage();
   }
 
   throw UnsupportedError('Unsupported transfer syntax: $transferSyntax');
