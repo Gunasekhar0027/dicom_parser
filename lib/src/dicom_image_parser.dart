@@ -59,17 +59,19 @@ Future<Uint8List> parseDICOMPixelData({
     planarConfiguration = int.parse(planarTag.first.value);
   }
 
-  // print("Transfer Syntax: $transferSyntax");
-  // print("Samples Per Pixel: $samplesPerPixel");
-  // print("Photometric Interpretation: $photometricInterpretation");
-  // print("Rows: $rows");
-  // print("Columns: $columns");
-  // //print("Pixel Spacing: $pixelSpacing mm");
-  // print("Bits Allocated: $bitsAllocated");
-  // print("Bits Stored: $bitsStored");
-  // //print("High Bit: $highBit");
-  // print("Pixel Representation: $pixelRepresentation");
-  // print("Planar Configuration: $planarConfiguration");
+  if (kDebugMode) {
+    print("Transfer Syntax: $transferSyntax");
+    print("Samples Per Pixel: $samplesPerPixel");
+    print("Photometric Interpretation: $photometricInterpretation");
+    print("Rows: $rows");
+    print("Columns: $columns");
+    //print("Pixel Spacing: $pixelSpacing mm");
+    print("Bits Allocated: $bitsAllocated");
+    print("Bits Stored: $bitsStored");
+    //print("High Bit: $highBit");
+    print("Pixel Representation: $pixelRepresentation");
+    print("Planar Configuration: $planarConfiguration");
+  }
 
   int width = columns;
   int height = rows;
@@ -458,9 +460,10 @@ Future<Uint8List> parseDICOMPixelData({
         } else {
           // Unsigned
           value = byteData.getUint16(i * bytesPerSample, endian);
+          if (bitsStored < 16) {
+            value &= (1 << bitsStored) - 1;
+          }
         }
-        value &= (1 << bitsStored) - 1;
-
         if (value < minPixel) minPixel = value;
         if (value > maxPixel) maxPixel = value;
       }
