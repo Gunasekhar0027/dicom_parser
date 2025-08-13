@@ -46,3 +46,7 @@
 ## 0.0.12
 
 * Bug fix showing black image for MONOCHROME. 
+
+## 0.0.13
+
+* Handle nested tags. 

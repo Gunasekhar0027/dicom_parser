@@ -57,8 +57,9 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
     }
   }
 
-  Future<void> parseDICOMTagsData(
+  Future<List<TagModel>> parseDICOMTagsData(
       {required Uint8List dicomDataInput, required int startOffset}) async {
+    List<TagModel> mainTags = [];
     ByteData byteDataInput =
         ByteData.sublistView(Uint8List.fromList(dicomDataInput));
     int offset = startOffset;
@@ -110,25 +111,102 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
 
       // Value Bytes
       List<int> valueBytes = [];
-
+      List<TagModel> sqChildTags = [];
       if (length == 0xFFFFFFFF && vr == "SQ") {
-        // The value starts from here
-        int sequenceContentStart = offset;
+        int seqOffset = offset;
 
-        while (offset + 8 <= dicomDataInput.lengthInBytes) {
-          int groupDelim = byteDataInput.getUint16(offset, currentEndian);
-          int elementDelim = byteDataInput.getUint16(offset + 2, currentEndian);
+        while (seqOffset + 8 <= dicomDataInput.lengthInBytes) {
+          int groupNum = byteDataInput.getUint16(seqOffset, currentEndian);
+          int elementNum =
+              byteDataInput.getUint16(seqOffset + 2, currentEndian);
 
-          if (groupDelim == 0xFFFE && elementDelim == 0xE0DD) {
-            // Sequence Delimitation Item found
-            valueBytes = dicomDataInput.sublist(sequenceContentStart, offset);
-
-            offset += 8; // Skip delimiter tag (FFFE,E0DD) + 4-byte zero length
+          // Sequence Delimitation Item
+          if (groupNum == 0xFFFE && elementNum == 0xE0DD) {
+            sqChildTags.add(TagModel(
+                group: "fffe",
+                element: "e0dd",
+                vr: "_",
+                value: "Sequence Delimitation",
+                valueBytes: [],
+                tagDescription: "",
+                childTags: []));
+            seqOffset += 8; // skip delimiter tag + zero length
             break;
-          } else {
-            offset++; // Scan forward byte-by-byte until delimiter is found
           }
+
+          // Item Tag
+          if (groupNum == 0xFFFE && elementNum == 0xE000) {
+            sqChildTags.add(TagModel(
+              group: "fffe",
+              element: "e000",
+              vr: "_",
+              value: "Item",
+              valueBytes: [],
+              tagDescription: "",
+              childTags: [],
+            ));
+
+            int itemLength =
+                byteDataInput.getUint32(seqOffset + 4, currentEndian);
+            seqOffset += 8;
+
+            if (itemLength == 0xFFFFFFFF) {
+              // Undefined length item — find Item Delimitation Item
+              int itemStart = seqOffset;
+              while (seqOffset + 8 <= dicomDataInput.lengthInBytes) {
+                int nextGroup =
+                    byteDataInput.getUint16(seqOffset, currentEndian);
+                int nextElement =
+                    byteDataInput.getUint16(seqOffset + 2, currentEndian);
+                if (nextGroup == 0xFFFE && nextElement == 0xE00D) {
+                  break;
+                }
+                seqOffset++;
+              }
+              int itemLengthCalculated = seqOffset - itemStart;
+
+              // Parse item contents recursively — handles nested SQ
+              List<TagModel> infiniteLengthTags = await parseDICOMTagsData(
+                dicomDataInput: dicomDataInput.sublist(
+                    itemStart, itemStart + itemLengthCalculated),
+                startOffset: 0,
+              );
+              sqChildTags.addAll(infiniteLengthTags);
+
+              // Item Delimitation Item
+              sqChildTags.add(TagModel(
+                group: "fffe",
+                element: "e00d",
+                vr: "_",
+                value: "Item Delimitation",
+                valueBytes: [],
+                tagDescription: "",
+                childTags: [],
+              ));
+              seqOffset += 8; // skip delimiter
+            } else {
+              // Defined length item
+              List<TagModel> definedLengthTags = await parseDICOMTagsData(
+                dicomDataInput:
+                    dicomDataInput.sublist(seqOffset, seqOffset + itemLength),
+                startOffset: 0,
+              );
+              sqChildTags.addAll(definedLengthTags);
+              seqOffset += itemLength;
+            }
+
+            continue;
+          }
+
+          // If we hit here, data is not aligned — break to avoid infinite loop
+          if (kDebugMode) {
+            print(
+                "⚠ Unexpected tag inside SQ at offset $seqOffset — stopping SQ parse");
+          }
+          break;
         }
+
+        offset = seqOffset;
       } else if (length == 0xFFFFFFFF &&
           vr == "OB" &&
           group == "7fe0" &&
@@ -181,45 +259,24 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
       }
 
       dynamic value;
-      if (group == "7fe0") {
-        if (element == "0010") {
-          imageBytes = valueBytes.toList();
-        } else if (element == "0008") {
-          if (kDebugMode) {
-            print("Float Pixel Data (7FE0,0008) found.");
-          }
-
-          final floatList = <double>[];
-          final byteData = ByteData.sublistView(Uint8List.fromList(valueBytes));
-          for (int i = 0; i + 3 < valueBytes.length; i += 4) {
-            floatList.add(byteData.getFloat32(i, currentEndian));
-          }
-
-          if (floatList.isEmpty) {
-            if (kDebugMode) {
-              print("⚠️ Float Pixel Data is empty. Skipping.");
-            }
-          } else {
-            double minVal = floatList.first;
-            double maxVal = floatList.first;
-            for (var val in floatList) {
-              if (val < minVal) minVal = val;
-              if (val > maxVal) maxVal = val;
-            }
-
-            double range = (maxVal - minVal).abs();
-            if (range == 0) range = 1;
-
-            final normalizedBytes = floatList.map((val) {
-              return ((val - minVal) / range * 255).clamp(0, 255).toInt();
-            }).toList();
-
-            imageBytes = Uint8List.fromList(normalizedBytes);
-            if (kDebugMode) {
-              print("✅ Float Pixel Data normalized to 8-bit grayscale.");
-            }
-          }
+      if (group == "7fe0" || group == "7fe1") {
+        value = "Pixel Data";
+      } else if (vr == "OB") {
+        // Other Byte, store as Uint8List
+        value = Uint8List.fromList(valueBytes);
+      } else if (vr == "AT") {
+        // Attribute Tag, list of (group, element) pairs
+        final byteData = ByteData.sublistView(Uint8List.fromList(valueBytes));
+        final tagList = <String>[];
+        for (int i = 0; i + 3 < valueBytes.length; i += 4) {
+          int groupVal = byteData.getUint16(
+              i, isMetaFileInfoGroup ? Endian.little : currentEndian);
+          int elementVal = byteData.getUint16(
+              i + 2, isMetaFileInfoGroup ? Endian.little : currentEndian);
+          tagList.add(
+              "(${groupVal.toRadixString(16).padLeft(4, '0')},${elementVal.toRadixString(16).padLeft(4, '0')})");
         }
+        value = tagList;
       } else if (numericVRs.contains(vr)) {
         if (valueBytes.isNotEmpty) {
           final byteData = ByteData.sublistView(Uint8List.fromList(valueBytes));
@@ -257,10 +314,11 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
       } else if (vr == "SQ") {
         try {
           if (valueBytes.length > 8) {
-            await parseDICOMTagsData(
+            List<TagModel> sqTags = await parseDICOMTagsData(
               dicomDataInput: Uint8List.fromList(valueBytes.sublist(8)),
               startOffset: 0,
             );
+            mainTags.addAll(sqTags);
           } else {
             if (kDebugMode) {
               print("Skipping SQ parsing due to insufficient bytes.");
@@ -278,8 +336,26 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
             print("Skipping special marker: $group,$element");
           }
           offset += 8; // 4 bytes tag + 4 bytes length
+          mainTags.add(TagModel(
+            group: "fffe",
+            element: "e0dd",
+            vr: "_",
+            value: "Sequence Delimitation",
+            valueBytes: [],
+            tagDescription: "",
+            childTags: [],
+          ));
           continue;
         } else if (element == "e000") {
+          mainTags.add(TagModel(
+            group: "fffe",
+            element: "e000",
+            vr: "_",
+            value: "Item",
+            valueBytes: [],
+            tagDescription: "",
+            childTags: [],
+          ));
           // This is a sequence item (FFFE,E000)
           int itemLength = byteDataInput.getUint32(offset, currentEndian);
           offset += 4;
@@ -297,6 +373,15 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
                   .padLeft(4, '0');
 
               if (nextGroup == "fffe" && nextElement == "e00d") {
+                mainTags.add(TagModel(
+                  group: "fffe",
+                  element: "e00d",
+                  vr: "_",
+                  value: "Item Delimitation",
+                  valueBytes: [],
+                  tagDescription: "",
+                  childTags: [],
+                ));
                 break;
               }
               offset++;
@@ -312,11 +397,12 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
             }
 
             // Recursively parse the item
-            await parseDICOMTagsData(
+            List<TagModel> definedLengthTags = await parseDICOMTagsData(
               dicomDataInput:
                   dicomDataInput.sublist(offset, offset + itemLength),
               startOffset: 0,
             );
+            mainTags.addAll(definedLengthTags);
 
             offset += itemLength;
             continue;
@@ -345,6 +431,7 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
         value: value.toString(),
         valueBytes: valueBytes,
         tagDescription: "",
+        childTags: [],
       );
       tagModel.tagDescription = tagDescriptionMap[tagModel.getTag()] ?? "";
 
@@ -357,19 +444,21 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
           // Pixel data is MPEG-4 video
         }
       }
-
-      tags.add(tagModel);
+      mainTags.add(tagModel);
+      mainTags.addAll(sqChildTags);
     }
+
+    return mainTags;
   }
 
-  await parseDICOMTagsData(dicomDataInput: dicomData, startOffset: 132);
+  List<TagModel> finalTags =
+      await parseDICOMTagsData(dicomDataInput: dicomData, startOffset: 132);
 
-  tags.removeWhere((tag) =>
-      tag.vr == "SQ" ||
-      tag.getTag() == "fffe,e00d" ||
-      tag.getTag() == "fffe,e0dd" ||
-      tag.value == "null" ||
-      tag.value.isEmpty);
+  tags.addAll(finalTags);
+
+  imageBytes = extractImageBytesFromTags(tags, currentEndian).toList();
+  List<TagModel> nestedTags = [];
+  nestedTags = buildNestedTags(tags);
 
   Uint8List? pngBytes;
   if (imageBytes.isNotEmpty) {
@@ -386,6 +475,94 @@ Future<DICOMModel> parseDICOM(Uint8List dicomData) async {
     }
   }
 
-  DICOMModel dicomModel = DICOMModel(tags: tags, imageBytes: pngBytes);
+  DICOMModel dicomModel = DICOMModel(tags: nestedTags, imageBytes: pngBytes);
   return dicomModel;
+}
+
+Uint8List extractImageBytesFromTags(
+    List<TagModel> flatList, Endian currentEndian) {
+  Uint8List imageBytes = Uint8List(0);
+
+  for (final tag in flatList) {
+    final group = tag.group.toLowerCase();
+    final element = tag.element.toLowerCase();
+
+    if (group == "7fe0") {
+      if (element == "0010") {
+        // Standard Pixel Data
+        imageBytes = Uint8List.fromList(tag.valueBytes);
+        break;
+      } else if (element == "0008") {
+        // Float Pixel Data
+        if (kDebugMode) {
+          print("Float Pixel Data (7FE0,0008) found.");
+        }
+
+        final floatList = <double>[];
+        final byteData =
+            ByteData.sublistView(Uint8List.fromList(tag.valueBytes));
+
+        for (int i = 0; i + 3 < tag.valueBytes.length; i += 4) {
+          floatList.add(byteData.getFloat32(i, currentEndian));
+        }
+
+        if (floatList.isEmpty) {
+          if (kDebugMode) print("⚠️ Float Pixel Data is empty. Skipping.");
+          continue;
+        }
+
+        double minVal = floatList.reduce((a, b) => a < b ? a : b);
+        double maxVal = floatList.reduce((a, b) => a > b ? a : b);
+        double range = (maxVal - minVal).abs();
+        if (range == 0) range = 1;
+
+        final normalizedBytes = floatList.map((val) {
+          return ((val - minVal) / range * 255).clamp(0, 255).toInt();
+        }).toList();
+
+        imageBytes = Uint8List.fromList(normalizedBytes);
+        if (kDebugMode) {
+          print("✅ Float Pixel Data normalized to 8-bit grayscale.");
+        }
+        break;
+      }
+    }
+  }
+
+  return imageBytes;
+}
+
+List<TagModel> buildNestedTags(List<TagModel> flatList) {
+  List<TagModel> root = [];
+  List<List<TagModel>> stack = [root];
+
+  for (var tag in flatList) {
+    final group = tag.group.toUpperCase();
+    final element = tag.element.toUpperCase();
+
+    if (tag.vr == "SQ") {
+      // Start of Sequence
+      tag.childTags = [];
+      stack.last.add(tag);
+      stack.add(tag.childTags);
+    } else if (group == "FFFE" && element == "E000") {
+      // Start of Item — don't keep the item node, just go deeper
+      List<TagModel> tempChildList = [];
+      stack.add(tempChildList);
+    } else if (group == "FFFE" && element == "E00D") {
+      // End of Item — pop and merge its children into parent
+      if (stack.length > 1) {
+        List<TagModel> itemChildren = stack.removeLast();
+        stack.last.addAll(itemChildren); // merge children into parent
+      }
+    } else if (group == "FFFE" && element == "E0DD") {
+      // End of Sequence
+      if (stack.length > 1) stack.removeLast();
+    } else {
+      // Normal Tag
+      stack.last.add(tag);
+    }
+  }
+
+  return root;
 }

@@ -75,19 +75,19 @@ class _StartState extends State<Start> {
                   // Parsed tags from DICOM File
                   List<TagModel> tags = dicomModel.tags;
                   if (kDebugMode) {
-                    //print(tags);
+                    print(tags.length);
                   }
 
                   // Parsed Image as Uint8List that can be  used in Image.memory() to view in flutter widget
                   Uint8List? parsedImageBytes = dicomModel.imageBytes;
                   if (kDebugMode) {
-                    //print(parsedImageBytes);
+                    print(parsedImageBytes?.length);
                   }
 
                   // Get Modality of DICOM File
                   String? modality = dicomModel.getModality();
                   if (kDebugMode) {
-                    // print(modality);
+                    print(modality);
                   }
 
                   setState(() {
@@ -121,9 +121,7 @@ class _StartState extends State<Start> {
               '(${tag.group}, ${tag.element})',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            tileColor: (tag.vr == "SQ")
-                ? Colors.yellow
-                : (tag.group == "fffe" ? Colors.blue : Colors.white),
+            tileColor: Colors.white,
             trailing: Text("$index", style: TextStyle(fontSize: 10)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,15 +129,20 @@ class _StartState extends State<Start> {
                 Text(tag.tagDescription, style: TextStyle(color: Colors.blue)),
                 if (tag.vr != "SQ") ...[
                   Text(
-                    (tag.value.length > 500 && tag.vr != "SQ")
-                        ? tag.value.substring(0, 500)
-                        : tag.value,
+                    tag.value,
                   ),
                 ],
               ],
             ),
           ),
           Divider(color: Colors.grey.shade400),
+          // Render nested tags recursively
+          if (tag.childTags.isNotEmpty)
+            ...List.generate(
+              tag.childTags.length,
+              (childIndex) => _buildTagWidget(
+                  tag.childTags[childIndex], depth + 1, childIndex),
+            ),
         ],
       ),
     );

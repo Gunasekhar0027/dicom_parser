@@ -633,6 +633,7 @@ List<int>? getPaletteLut(
       value: '',
       tagDescription: '',
       valueBytes: [],
+      childTags: [],
     ),
   );
 
@@ -645,6 +646,7 @@ List<int>? getPaletteLut(
       value: '',
       tagDescription: '',
       valueBytes: [],
+      childTags: [],
     ),
   );
 

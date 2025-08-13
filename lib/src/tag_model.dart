@@ -5,6 +5,7 @@ class TagModel {
   String value;
   String tagDescription;
   List<int> valueBytes;
+  List<TagModel> childTags;
 
   TagModel({
     required this.group,
@@ -13,6 +14,7 @@ class TagModel {
     required this.value,
     required this.tagDescription,
     required this.valueBytes,
+    required this.childTags,
   });
 
   getTag() {
